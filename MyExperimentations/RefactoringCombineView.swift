@@ -46,7 +46,6 @@ final class RefactoringCombineViewModel: ObservableObject {
     func resetTimer()  {
         stopTimer()
         seconds = 0
-        startTimer()
     }
 }
 
