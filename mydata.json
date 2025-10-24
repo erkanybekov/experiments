@@ -1,0 +1,16 @@
+
+{
+    "year": 2025,
+    "month": 9,
+    "day": 23,
+    "hour": 12,
+    "minute": 10,
+    "seconds": 44,
+    "milliSeconds": 444,
+    "dateTime": "2025-09-23T12:03:44.4446401",
+    "date": "09/23/2025",
+    "time": "12:03",
+    "timeZone": "Europe/London",
+    "dayOfWeek": "Wednesday",
+    "dstActive": false
+}
