@@ -46,24 +46,29 @@ final class SomeViewModel: ObservableObject {
 
 ⸻
 
-⚙️ Правила расстановки методов
-	1.	@Published всегда сверху.
-→ это “интерфейс состояния” между View и ViewModel.
-	2.	init() — сразу после Published.
-→ удобно видеть, какие наблюдения запускаются при создании.
-	3.	Публичные методы (load, refresh, start, stop)
-→ идут после init, это “API” для View.
-	4.	Приватные async-методы
-→ всё, что связано с наблюдением, сетевыми вызовами, дебаунсом, обработкой ошибок.
-	5.	MARK-комментарии
+## ⚙️ Правила расстановки методов
 
-// MARK: - Published properties
-// MARK: - Lifecycle
-// MARK: - Public API
-// MARK: - Private helpers
+1. **@Published всегда сверху**  
+   → это “интерфейс состояния” между View и ViewModel.
+
+2. **`init()` — сразу после Published**  
+   → удобно видеть, какие наблюдения запускаются при создании.
+
+3. **Публичные методы (`load`, `refresh`, `start`, `stop`)**  
+   → идут после `init`, это “API” для View.
+
+4. **Приватные async-методы**  
+   → всё, что связано с наблюдением, сетевыми вызовами, дебаунсом, обработкой ошибок.
+
+5. **MARK-комментарии**  
+   ```swift
+   // MARK: - Published properties
+   // MARK: - Lifecycle
+   // MARK: - Public API
+   // MARK: - Private helpers
 
 
-	6.	Каждый async метод должен быть “изолирован”
+6.	Каждый async метод должен быть “изолирован”
 → то есть сам управляет своим Task, отменой и MainActor.
 
 ⸻
