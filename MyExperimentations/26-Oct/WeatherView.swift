@@ -8,27 +8,29 @@
 import SwiftUI
 import Combine
 
-final class WeatherViewModel: ObservableObject {
-    @Published var latitude: String = ""
-    @Published var longitude: String = ""
-    @Published var temperature: String = "--"
-    @Published var state: State = .idle
+// MARK: If you see async/await, then there's has to be @observable
+@Observable
+final class WeatherViewModel {
+    var latitude: String = ""
+    var longitude: String = ""
+    var temperature: String = "--"
+    var state: State = .idle
     
     enum State: Equatable {
         case idle, isLoading, success, error(String)
     }
     
-    private var weatherTask: Task<Void, Never>? = nil
+    // MARK: I don't see any return type VOID,NEVER doesn't count
+    //    private var weatherTask: Task<Void, Never>? = nil
     
     // MARK: async/await approach(❌ всё смешано: UI логика + Combine в init)
+    
     @MainActor
     func fetchWeather(lat: String, lng: String) {
-        weatherTask?.cancel()
-        
-        weatherTask = Task {
+        Task {
             state = .isLoading
             try? await Task.sleep(nanoseconds: 300_000_000)
-           
+            
             do {
                 let weatherTemp = try await fetchWeatherAsync(lat: lat, lng: lng)
                 print("There you go: \(weatherTemp)")
@@ -56,46 +58,45 @@ final class WeatherViewModel: ObservableObject {
     }
     
     // MARK: DEPRECATED
-//    private func fetchWeatherCombine() {
-//        // ❌ всё смешано: UI логика + Combine в init
-//        $city
-//            .debounce(for: .milliseconds(300), scheduler: RunLoop.main)
-//            .removeDuplicates()
-//            .sink { [weak self] city in
-//                guard let self = self, !city.isEmpty else { return }
-//                self.fetchWeather(for: city)
-//            }
-//            .store(in: &cancellables)
-//    }
+    //    private func fetchWeatherCombine() {
+    //        // ❌ всё смешано: UI логика + Combine в init
+    //        $city
+    //            .debounce(for: .milliseconds(300), scheduler: RunLoop.main)
+    //            .removeDuplicates()
+    //            .sink { [weak self] city in
+    //                guard let self = self, !city.isEmpty else { return }
+    //                self.fetchWeather(for: city)
+    //            }
+    //            .store(in: &cancellables)
+    //    }
     
     // MARK: DEPRECATED
     // ❌ не отменяется, нет await, не thread-safe
-//    func fetchWeather(for city: String) {
-//        isLoading = true
-//        error = nil
-//        
-//        let urlString = "https://api.open-meteo.com/v1/forecast?latitude=51.51&longitude=-0.13&current_weather=true"
-//        guard let url = URL(string: urlString) else {
-//            self.error = "Invalid URL"
-//            return
-//        }
-//        
-//        URLSession.shared.dataTaskPublisher(for: url)
-//            .map(\.data)
-//            .decode(type: WeatherResponse.self, decoder: JSONDecoder())
-//            .receive(on: DispatchQueue.main)
-//            .sink(receiveCompletion: { [weak self] completion in
-//                self?.isLoading = false
-//                if case let .failure(err) = completion {
-//                    self?.error = err.localizedDescription
-//                }
-//            }, receiveValue: { [weak self] response in
-//                self?.temperature = "\(response.current_weather.temperature)°C"
-//            })
-//            .store(in: &cancellables)
-//    }
+    //    func fetchWeather(for city: String) {
+    //        isLoading = true
+    //        error = nil
+    //
+    //        let urlString = "https://api.open-meteo.com/v1/forecast?latitude=51.51&longitude=-0.13&current_weather=true"
+    //        guard let url = URL(string: urlString) else {
+    //            self.error = "Invalid URL"
+    //            return
+    //        }
+    //
+    //        URLSession.shared.dataTaskPublisher(for: url)
+    //            .map(\.data)
+    //            .decode(type: WeatherResponse.self, decoder: JSONDecoder())
+    //            .receive(on: DispatchQueue.main)
+    //            .sink(receiveCompletion: { [weak self] completion in
+    //                self?.isLoading = false
+    //                if case let .failure(err) = completion {
+    //                    self?.error = err.localizedDescription
+    //                }
+    //            }, receiveValue: { [weak self] response in
+    //                self?.temperature = "\(response.current_weather.temperature)°C"
+    //            })
+    //            .store(in: &cancellables)
+    //    }
     
-    deinit { weatherTask?.cancel() }
 }
 
 struct WeatherResponse: Decodable {
@@ -107,7 +108,7 @@ struct WeatherResponse: Decodable {
 
 
 struct WeatherView: View {
-    @StateObject private var vm = WeatherViewModel()
+    @State private var vm = WeatherViewModel()
     
     var body: some View {
         NavigationStack {
@@ -130,7 +131,7 @@ struct WeatherView: View {
                 }
                 
                 Spacer()
-        
+                
             }
             .navigationTitle("Weather Lookup")
             .padding()
