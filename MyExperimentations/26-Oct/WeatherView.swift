@@ -95,9 +95,7 @@ final class WeatherViewModel: ObservableObject {
 //            .store(in: &cancellables)
 //    }
     
-    deinit {
-        weatherTask?.cancel()
-    }
+    deinit { weatherTask?.cancel() }
 }
 
 struct WeatherResponse: Decodable {
