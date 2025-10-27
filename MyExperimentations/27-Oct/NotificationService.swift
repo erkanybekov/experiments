@@ -6,6 +6,7 @@
 //
 import UserNotifications
 
+// MARK: REFACTORED
 class NotificationServiceSmelly {
     // shared and current()
     static let shared = NotificationServiceSmelly()

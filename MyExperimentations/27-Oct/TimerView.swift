@@ -38,8 +38,13 @@ struct TimerView: View {
         VStack(spacing: 10) {
             Text("Local Notification Timer")
                 .font(.title.bold())
-            Text("After \(vm.seconds) seconds")
-                .foregroundStyle(.secondary)
+            
+            Stepper("Timer") {
+                vm.seconds += 1
+            } onDecrement: {
+                vm.seconds -= 1
+            }
+
         }
     }
     
@@ -87,13 +92,6 @@ struct TimerView: View {
         case .idle: "Idle"
         case .scheduled: "Scheduled..."
         case .delivered: "Delivered 🎉"
-        }
-    }
-    
-    private func start() async {
-        await vm.startTimerNotification()
-        if vm.state == .scheduled {
-            await vm.startTimerNotification()
         }
     }
 }
