@@ -7,15 +7,28 @@
 
 import SwiftUI
 import FirebaseCore
+import UserNotifications
 
-class AppDelegate: NSObject, UIApplicationDelegate {
+class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDelegate {
     func application(
         _ application: UIApplication,
-        didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey : Any]? = nil) -> Bool {
-            FirebaseApp.configure()
-            return true
-        }
+        didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey : Any]? = nil
+    ) -> Bool {
+        FirebaseApp.configure()
+
+        UNUserNotificationCenter.current().delegate = self
+        return true
+    }
+
+    // Показываем уведомление в foreground
+    func userNotificationCenter(
+        _ center: UNUserNotificationCenter,
+        willPresent notification: UNNotification
+    ) async -> UNNotificationPresentationOptions {
+        return [.banner, .sound]
+    }
 }
+
 
 @main
 struct MyExperimentationsApp: App {
@@ -37,7 +50,7 @@ struct MyExperimentationsApp: App {
     
     var body: some Scene {
         WindowGroup {
-            RefactoringCombineView()
+            TimerView()
         }
     }
 }
