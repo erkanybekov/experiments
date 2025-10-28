@@ -1,43 +1,98 @@
-# Golden Practice: NotificationService
+# Background Image Fetch with BGTaskScheduler
 
-Сервис для работы с локальными уведомлениями на iOS с использованием `async/await`.
+## BackgroundImageFetchScheduling
+
+Golden-standard сервис для фонового обновления изображений с использованием `BGTaskScheduler`.
 
 ```swift
-final class NotificationService {
-    // MARK: Shared instance and UNUserNotificationCenter
-    static let shared = NotificationService()
-    var center = UNUserNotificationCenter.current()
+import BackgroundTasks
+import Foundation
+import UIKit
+
+protocol BackgroundImageFetchScheduling {
+    /// Регистрация фоновых задач
+    func registerTasks()
     
-    // MARK: Request permission and check authorization
-    func requestPermission() async -> Bool {
-        (try? await center.requestAuthorization(options: [.alert, .sound])) ?? false
+    /// Планирование следующего обновления через заданный интервал
+    func scheduleRefresh(after interval: TimeInterval)
+    
+    /// Обработка задачи при срабатывании
+    func handleRefresh(task: BGAppRefreshTask)
+    
+    /// Асинхронный запрос нового изображения
+    func fetchDogImage() async throws -> DogImage
+}
+
+final class BackgroundImageFetchService: BackgroundImageFetchScheduling {
+    nonisolated static let shared = BackgroundImageFetchService()
+    private init() {}
+    
+    private let refreshIdentifier = "kg.erkan.myexperimentations.imageFetch"
+    
+    func registerTasks() {
+        BGTaskScheduler.shared.register(forTaskWithIdentifier: refreshIdentifier, using: nil) { task in
+            self.handleRefresh(task: task as! BGAppRefreshTask)
+        }
     }
     
-    func isAuthorized() async -> Bool {
-        let settings = await center.notificationSettings()
-        return settings.authorizationStatus == .authorized
+    func scheduleRefresh(after interval: TimeInterval) {
+        let request = BGAppRefreshTaskRequest(identifier: refreshIdentifier)
+        request.earliestBeginDate = Date(timeIntervalSinceNow: interval)
+        do {
+            try BGTaskScheduler.shared.submit(request)
+        } catch {
+            print("❌ Failed to schedule image fetch task:", error)
+        }
     }
     
-    // MARK: Schedule a notification
-    func schedule(id: String, title: String, body: String, after seconds: TimeInterval) async throws {
-        let content = UNMutableNotificationContent()
-        content.title = title
-        content.body = body
-        content.sound = .default
+    func handleRefresh(task: BGAppRefreshTask) {
+        // Перепланируем задачу сразу
+        scheduleRefresh(after: 10) // ~10 секунд
         
-        let trigger = UNTimeIntervalNotificationTrigger(timeInterval: seconds, repeats: false)
-        let request = UNNotificationRequest(identifier: id, content: content, trigger: trigger)
-        
-        try await center.add(request)
+        task.expirationHandler = {
+            // Очистка ресурсов или отмена операций
+            task.setTaskCompleted(success: false)
+        }
+
+        Task {
+            do {
+                let dog = try await fetchDogImage()
+                print("✅ New dog image: \(dog.message)")
+                task.setTaskCompleted(success: true)
+            } catch {
+                print("❌ Fetch failed:", error)
+                task.setTaskCompleted(success: false)
+            }
+        }
     }
     
-    // MARK: Cancel and clear notifications
-    func cancel(id: String) {
-        center.removePendingNotificationRequests(withIdentifiers: [id])
-    }
-    
-    func clearAll() {
-        center.removeAllDeliveredNotifications()
+    func fetchDogImage() async throws -> DogImage {
+        guard let url = URL(string: "https://dog.ceo/api/breeds/image/random") else {
+            throw URLError(.badURL)
+        }
+        let (data, _) = try await URLSession.shared.data(from: url)
+        let dogImage = try JSONDecoder().decode(DogImage.self, from: data)
+        return dogImage
     }
 }
+
+struct DogImage: Codable {
+    let message: String
+    let status: String
+}
 ```
+
+### 🔹 Зачем и когда использовать
+
+- **Используется для:** фонового обновления контента, который не требует немедленного отображения пользователю, например:
+  - Кеширование изображений;
+  - Синхронизация данных с сервером;
+  - Обновление виджетов.
+
+- **Особенности:**
+  - iOS сама решает, когда выполнять задачу, исходя из ресурсов и энергопотребления.
+  - Нельзя гарантировать точное время выполнения (например, через 10 секунд).
+  - Может не сработать, если приложение активно и обновляет данные при старте (foreground fetch).
+
+- **Когда бесполезен:**  
+  Если приложение всегда загружает актуальные данные при запуске или пока находится в foreground — BGTaskScheduler почти не нужен, так как система сама не даст гарантии частого или точного выполнения.  
