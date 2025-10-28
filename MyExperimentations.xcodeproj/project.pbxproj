@@ -42,9 +42,22 @@
 		41D5B78C2E82B79E00F2E7EA /* mydata.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = mydata.json; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		415C62562EB0E86E00BA955D /* Exceptions for "MyExperimentations" folder in "MyExperimentations" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = 41D5B75F2E82B77100F2E7EA /* MyExperimentations */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
+
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		41D5B7622E82B77100F2E7EA /* MyExperimentations */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				415C62562EB0E86E00BA955D /* Exceptions for "MyExperimentations" folder in "MyExperimentations" target */,
+			);
 			path = MyExperimentations;
 			sourceTree = "<group>";
 		};
@@ -434,6 +447,7 @@
 				DEVELOPMENT_TEAM = NXD3KKB2C9;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = MyExperimentations/Info.plist;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -466,6 +480,7 @@
 				DEVELOPMENT_TEAM = NXD3KKB2C9;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = MyExperimentations/Info.plist;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;

@@ -7,20 +7,18 @@
 
 import SwiftUI
 
-import SwiftUI
-
 struct BackgroundFeaturesView: View {
     @State private var selection: Feature? = nil
-
+    
     enum Feature: String, Identifiable, CaseIterable {
         case localNotifications = "Local Notifications"
         case silentPush = "Silent Push"
         case liveActivities = "Live Activities"
         case bgTaskScheduler = "BGTaskScheduler"
-
+        
         var id: String { rawValue }
     }
-
+    
     var body: some View {
         NavigationStack {
             List(Feature.allCases) { feature in
@@ -34,7 +32,7 @@ struct BackgroundFeaturesView: View {
             }
         }
     }
-
+    
     @ViewBuilder
     private func featureView(_ feature: Feature) -> some View {
         switch feature {

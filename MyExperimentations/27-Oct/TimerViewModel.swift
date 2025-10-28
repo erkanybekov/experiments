@@ -46,8 +46,9 @@ final class TimerViewModel {
         timerTask = Task { [weak self] in
             guard let self else { return }
             while !Task.isCancelled && progress < 1.0 {
+                // elapsed
                 let elapsed = Date().timeIntervalSince(startDate!)
-              
+                
                 progress = min(elapsed / Double(seconds), 1.0)
                 
                 if progress >= 1.0 {

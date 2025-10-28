@@ -8,6 +8,7 @@
 import SwiftUI
 import FirebaseCore
 import UserNotifications
+import BackgroundTasks
 
 class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDelegate {
     func application(
@@ -15,8 +16,10 @@ class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDele
         didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey : Any]? = nil
     ) -> Bool {
         FirebaseApp.configure()
-
         UNUserNotificationCenter.current().delegate = self
+        
+        /// Как я упоминал ранее, фреймворк BackgroundTasks жестко требует, чтобы регистрация задач (BGTaskScheduler.shared.register) выполнялась только один раз за жизненный цикл приложения
+        BackgroundImageFetchService.shared.registerTasks() // MARK: Вот так будет правильно (refence: service.registerTasks() on vm)
         return true
     }
 
@@ -50,7 +53,7 @@ struct MyExperimentationsApp: App {
     
     var body: some Scene {
         WindowGroup {
-            TimerView()
+            ImageFetchView()
         }
     }
 }
