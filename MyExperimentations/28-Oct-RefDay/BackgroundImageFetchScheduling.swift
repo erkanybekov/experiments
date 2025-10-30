@@ -20,15 +20,15 @@ protocol BackgroundImageFetchScheduling {
 final class BackgroundImageFetchService: BackgroundImageFetchScheduling {
     nonisolated static let shared = BackgroundImageFetchService()
     private init() {}
-
+    
     private let refreshIdentifier = "kg.erkan.myexperimentations.imageFetch"
-
+    
     func registerTasks() {
         BGTaskScheduler.shared.register(forTaskWithIdentifier: refreshIdentifier, using: nil) { task in
             self.handleRefresh(task: task as! BGAppRefreshTask)
         }
     }
-
+    
     func scheduleRefresh(after interval: TimeInterval) {
         let request = BGAppRefreshTaskRequest(identifier: refreshIdentifier)
         request.earliestBeginDate = Date(timeIntervalSinceNow: interval)
@@ -38,16 +38,16 @@ final class BackgroundImageFetchService: BackgroundImageFetchScheduling {
             print("❌ Failed to schedule image fetch task:", error)
         }
     }
-
+    
     func handleRefresh(task: BGAppRefreshTask) {
         // перепланируем сразу
         scheduleRefresh(after: 10) // ~10 сек
-
+        
         task.expirationHandler = {
             // Очистка ресурсов или отмена операций
-                task.setTaskCompleted(success: false)
+            task.setTaskCompleted(success: false)
         }
-
+        
         Task {
             do {
                 let dog = try await fetchDogImage()
@@ -59,15 +59,15 @@ final class BackgroundImageFetchService: BackgroundImageFetchScheduling {
             }
         }
     }
-
+    
     func fetchDogImage() async throws -> DogImage {
         guard let url = URL(string: "https://dog.ceo/api/breeds/image/random") else {
             throw URLError(.badURL)
         }
-
+        
         let (data, _) = try await URLSession.shared.data(from: url)
         let dogImage = try JSONDecoder().decode(DogImage.self, from: data)
-
+        
         return dogImage
     }
 }
