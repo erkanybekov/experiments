@@ -53,7 +53,7 @@ struct MyExperimentationsApp: App {
     
     var body: some Scene {
         WindowGroup {
-            DragDropView()
+            HalloweenMoonView()
         }
     }
 }
