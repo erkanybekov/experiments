@@ -112,55 +112,78 @@ struct TaskColumn: View {
     let title: String
     @Binding var tasks: [TaskItem]
     @ObservedObject var viewModel: DragDropViewModel
+    
     @State private var isTargeted = false
-
+    
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text(title)
-                .font(.headline)
-                .foregroundColor(.secondary)
-
-            ScrollView {
-                LazyVStack(spacing: 8) {
-                    ForEach(tasks) { task in
-                        TaskRow(task: task)
-                            .draggable(task)
-                            .dropDestination(for: TaskItem.self) { droppedTasks, _ in
-                                handleDrop(droppedTasks, on: task)
-                            }
-                    }
+            headerView
+            taskListView
+            footerView
+        }
+    }
+    
+    private var headerView: some View {
+        Text(title)
+            .font(.headline)
+            .foregroundColor(.secondary)
+    }
+    
+    private var taskListView: some View {
+        ScrollView {
+            LazyVStack(spacing: 8) {
+                ForEach(tasks) { task in
+                    TaskRow(task: task)
+                        .draggable(task)
+                        .dropDestination(for: TaskItem.self) { droppedTasks, _ in
+                            handleDrop(droppedTasks, on: task)
+                        }
                 }
-                .padding(.vertical, tasks.isEmpty ? 40 : 8)
             }
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .background(
+            .padding(.vertical, tasks.isEmpty ? 40 : 8)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(dropAreaBackground)
+        .dropDestination(for: TaskItem.self) { droppedTasks, _ in
+            handleDrop(droppedTasks, on: nil)
+        } isTargeted: { targeted in
+            isTargeted = targeted
+        }
+    }
+    
+    private var dropAreaBackground: some View {
+        RoundedRectangle(cornerRadius: 12)
+            .fill(isTargeted ? Color.blue.opacity(0.1) : Color.gray.opacity(0.05))
+            .overlay(
                 RoundedRectangle(cornerRadius: 12)
-                    .fill(isTargeted ? Color.blue.opacity(0.1) : Color.gray.opacity(0.05))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 12)
-                            .strokeBorder(isTargeted ? Color.blue : Color.clear, lineWidth: 2)
-                    )
+                    .strokeBorder(isTargeted ? Color.blue : Color.clear, lineWidth: 2)
             )
-            .dropDestination(for: TaskItem.self) { droppedTasks, _ in
-                handleDrop(droppedTasks, on: nil)
-            } isTargeted: { targeted in
-                isTargeted = targeted
-            }
-
-            Text("\(tasks.count) tasks")
-                .font(.caption)
-                .foregroundColor(.secondary)
-        }
+    }
+    
+    private var footerView: some View {
+        Text("\(tasks.count) tasks")
+            .font(.caption)
+            .foregroundColor(.secondary)
     }
 
-    private func handleDrop(_ droppedTasks: [TaskItem], on targetTask: TaskItem?) -> Bool {
+     private func handleDrop(_ droppedTasks: [Item], on targetTask: Item?) -> Bool {
         guard let droppedTask = droppedTasks.first else { return false }
-        let targetIndex = targetTask.flatMap { tasks.firstIndex(where: { $0.id == $0.id }) }
-        withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
-            viewModel.moveTask(droppedTask, from: tasks, to: &tasks, at: targetIndex)
+        
+        let targetIndex = targetTask.flatMap { target in
+            items.firstIndex(where: { $0.id == target.id })
         }
+        
+        withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+            vm.move(
+                droppedTask,
+                from: items,
+                to: &items,
+                at: targetIndex
+            )
+        }
+        
         return true
-    }
+    }}
 }
 ```
 
