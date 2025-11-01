@@ -7,12 +7,13 @@
 
 
 import SwiftUI
-import UniformTypeIdentifiers
 import Combine
+import UniformTypeIdentifiers
 
-// MARK: - Model
+// MARK: - Шаг 1: Модель данных
+// Модель должна быть Transferable для drag & drop
 
-struct TaskItem: Identifiable, Codable, Equatable, Transferable {
+struct TaskItem: Identifiable, Codable, Transferable {
     let id: UUID
     var title: String
     
@@ -21,15 +22,22 @@ struct TaskItem: Identifiable, Codable, Equatable, Transferable {
         self.title = title
     }
     
+    // Определяем как передавать данные при drag & drop
     static var transferRepresentation: some TransferRepresentation {
         CodableRepresentation(contentType: .json)
     }
 }
 
-// MARK: - ViewModel
+// Регистрируем собственный UTType для нашего типа данных
+//extension UTType {
+//    static let taskItem = UTType(exportedAs: "com.app.taskitem")
+//}
+
+// MARK: - Шаг 2: ViewModel с бизнес-логикой
 
 @MainActor
 final class DragDropViewModel: ObservableObject {
+    // Два массива: источник и назначение
     @Published var availableTasks: [TaskItem]
     @Published var selectedTasks: [TaskItem]
     
@@ -37,145 +45,145 @@ final class DragDropViewModel: ObservableObject {
         self.availableTasks = [
             TaskItem(title: "Task 1"),
             TaskItem(title: "Task 2"),
-            TaskItem(title: "Task 3"),
-            TaskItem(title: "Task 4"),
-            TaskItem(title: "Task 5")
+            TaskItem(title: "Task 3")
         ]
         self.selectedTasks = []
     }
     
-    func moveTask(_ task: TaskItem, from source: [TaskItem], to destination: inout [TaskItem], at index: Int?) {
-        // Remove from source
-        if availableTasks.contains(where: { $0.id == task.id }) {
-            availableTasks.removeAll { $0.id == task.id }
-        } else {
-            selectedTasks.removeAll { $0.id == task.id }
-        }
+    // Главный метод: перемещение задачи
+    func moveTask(_ task: TaskItem, to destination: ListType) {
+        // Шаг 2.1: Удаляем из обоих массивов (на случай если задача уже там)
+        availableTasks.removeAll { $0.id == task.id }
+        selectedTasks.removeAll { $0.id == task.id }
         
-        // Add to destination
-        if let index = index {
-            destination.insert(task, at: min(index, destination.count))
-        } else {
-            destination.append(task)
+        // Шаг 2.2: Добавляем в нужный массив
+        switch destination {
+        case .available:
+            availableTasks.append(task)
+        case .selected:
+            selectedTasks.append(task)
         }
-    }
-    
-    func reorderTasks(in list: inout [TaskItem], from: IndexSet, to: Int) {
-        list.move(fromOffsets: from, toOffset: to)
     }
 }
 
-// MARK: - Views
+// Enum для определения типа списка
+enum ListType {
+    case available
+    case selected
+}
+
+// MARK: - Шаг 3: View с drag & drop
 
 struct DragDropView: View {
     @StateObject private var viewModel = DragDropViewModel()
     
     var body: some View {
         NavigationView {
-            HStack(spacing: 20) {
-                TaskColumn(
+            HStack(spacing: 30) {
+                // Левый список - Available
+                TaskListView(
                     title: "Available",
-                    tasks: $viewModel.availableTasks,
+                    tasks: viewModel.availableTasks,
+                    listType: .available,
                     viewModel: viewModel
                 )
                 
                 Divider()
                 
-                TaskColumn(
+                // Правый список - Selected
+                TaskListView(
                     title: "Selected",
-                    tasks: $viewModel.selectedTasks,
+                    tasks: viewModel.selectedTasks,
+                    listType: .selected,
                     viewModel: viewModel
                 )
             }
             .padding()
-            .navigationTitle("Drag & Drop")
+            .navigationTitle("Drag & Drop Tutorial")
         }
     }
 }
 
-struct TaskColumn: View {
+// MARK: - Шаг 4: Компонент списка задач
+
+struct TaskListView: View {
     let title: String
-    @Binding var tasks: [TaskItem]
+    let tasks: [TaskItem]
+    let listType: ListType
     @ObservedObject var viewModel: DragDropViewModel
     
-    @State private var isTargeted = false
+    @State private var isDropTargeted = false
     
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            headerView
-            taskListView
-            footerView
+            // Заголовок
+            Text(title)
+                .font(.headline)
+                .foregroundColor(.secondary)
+            
+            // Область для drop
+            dropArea
+            
+            // Счетчик
+            Text("\(tasks.count) tasks")
+                .font(.caption)
+                .foregroundColor(.secondary)
         }
     }
     
-    private var headerView: some View {
-        Text(title)
-            .font(.headline)
-            .foregroundColor(.secondary)
-    }
-    
-    private var taskListView: some View {
+    private var dropArea: some View {
         ScrollView {
-            LazyVStack(spacing: 8) {
+            VStack(spacing: 8) {
                 ForEach(tasks) { task in
-                    TaskRow(task: task)
+                    TaskRowView(task: task)
+                        // Шаг 4.1: Делаем элемент draggable
                         .draggable(task)
-                        .dropDestination(for: TaskItem.self) { droppedTasks, _ in
-                            handleDrop(droppedTasks, on: task)
-                        }
                 }
             }
-            .padding(.vertical, tasks.isEmpty ? 40 : 8)
+            .padding(.vertical, 8)
+            .frame(maxWidth: .infinity)
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(dropAreaBackground)
-        .dropDestination(for: TaskItem.self) { droppedTasks, _ in
-            handleDrop(droppedTasks, on: nil)
+        .frame(maxHeight: .infinity)
+        .background(dropBackground)
+        // Шаг 4.2: Принимаем drop на весь список
+        .dropDestination(for: TaskItem.self) { droppedTasks, location in
+            handleDrop(droppedTasks)
         } isTargeted: { targeted in
-            isTargeted = targeted
+            isDropTargeted = targeted
         }
     }
     
-    private var dropAreaBackground: some View {
+    private var dropBackground: some View {
         RoundedRectangle(cornerRadius: 12)
-            .fill(isTargeted ? Color.blue.opacity(0.1) : Color.gray.opacity(0.05))
+            .fill(isDropTargeted ? Color.blue.opacity(0.1) : Color.gray.opacity(0.05))
             .overlay(
                 RoundedRectangle(cornerRadius: 12)
-                    .strokeBorder(isTargeted ? Color.blue : Color.clear, lineWidth: 2)
+                    .strokeBorder(
+                        isDropTargeted ? Color.blue : Color.gray.opacity(0.2),
+                        lineWidth: 2
+                    )
             )
     }
     
-    private var footerView: some View {
-        Text("\(tasks.count) tasks")
-            .font(.caption)
-            .foregroundColor(.secondary)
-    }
-    
-    private func handleDrop(_ droppedTasks: [TaskItem], on targetTask: TaskItem?) -> Bool {
-        guard let droppedTask = droppedTasks.first else { return false }
+    // Шаг 4.3: Обработка drop события
+    private func handleDrop(_ droppedTasks: [TaskItem]) -> Bool {
+        guard let task = droppedTasks.first else { return false }
         
-        let targetIndex = targetTask.flatMap { target in
-            tasks.firstIndex(where: { $0.id == target.id })
-        }
-        
-        withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
-            viewModel.moveTask(
-                droppedTask,
-                from: tasks,
-                to: &tasks,
-                at: targetIndex
-            )
+        withAnimation(.spring(response: 0.3)) {
+            viewModel.moveTask(task, to: listType)
         }
         
         return true
     }
 }
 
-struct TaskRow: View {
+// MARK: - Шаг 5: Компонент строки задачи
+
+struct TaskRowView: View {
     let task: TaskItem
     
     var body: some View {
-        HStack(spacing: 12) {
+        HStack {
             Text(task.title)
                 .font(.body)
             
@@ -189,7 +197,7 @@ struct TaskRow: View {
         .background(
             RoundedRectangle(cornerRadius: 8)
                 .fill(Color(uiColor: .systemBackground))
-                .shadow(color: .black.opacity(0.08), radius: 2, y: 1)
+                .shadow(color: .black.opacity(0.1), radius: 3, y: 1)
         )
     }
 }
@@ -205,7 +213,7 @@ struct TaskRow: View {
  
  1. ПОДГОТОВКА (Шаг 1-2):
     - Создаем модель TaskItem с протоколом Transferable
-    - Регистрируем UTType для передачи данных (Optional)
+    - Регистрируем UTType для передачи данных
     - Создаем ViewModel с двумя массивами
  
  2. DRAG (Начало перетаскивания):
