@@ -281,9 +281,10 @@ struct CalendarView: View {
     private var daysGridView: some View {
         LazyVGrid(columns: columns, spacing: 8) {
             ForEach(viewModel.days) { day in
-                DayCell(day: day) {
-                    viewModel.selectDate(day.date)
-                }
+                Text(day.date.formatted(.dateTime.day()))
+//                DayCell(day: day) {
+//                    viewModel.selectDate(day.date)
+//                }
             }
         }
     }
