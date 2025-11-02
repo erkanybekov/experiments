@@ -121,12 +121,86 @@ final class CalendarViewModel {
     private let today: Date
     
     // Public Methods
-    func moveToNextMonth() { ... }
-    func moveToPreviousMonth() { ... }
-    func selectDate(_ date: Date) { ... }
-    func addEvent(title: String, date: Date, color: Color) { ... }
-    func deleteEvent(_ event: CalendarEvent) { ... }
-    func eventsForDate(_ date: Date) -> [CalendarEvent] { ... }
+    func moveToNextMonth() {
+        guard let nextMonth = calendar.date(
+            byAdding: .month,
+            value: 1,
+            to: currentMonth
+        ) else { return }
+        currentMonth = nextMonth
+        updateDays()
+    }
+    
+    func moveToPreviousMonth() {
+        guard let previousMonth = calendar.date(
+            byAdding: .month,
+            value: -1,
+            to: currentMonth
+        ) else { return }
+        currentMonth = previousMonth
+        updateDays()
+    }
+    
+    func selectDate(_ date: Date) {
+        selectedDate = calendar.startOfDay(for: date)
+    }
+    
+    // ← NEW: Add event method
+    func addEvent(title: String, date: Date, color: Color = .blue) {
+        let event = CalendarEvent(
+            title: title,
+            date: calendar.startOfDay(for: date),
+            color: color
+        )
+        events.append(event)
+        updateDays()  // Refresh to show event indicator
+    }
+    
+    // ← NEW: Delete event method
+    func deleteEvent(_ event: CalendarEvent) {
+        events.removeAll { $0.id == event.id }
+        updateDays()
+    }
+    
+    // ← NEW: Get events for a specific date
+    func eventsForDate(_ date: Date) -> [CalendarEvent] {
+        let targetDate = calendar.startOfDay(for: date)
+        return events.filter { calendar.isDate($0.date, inSameDayAs: targetDate) }
+    }
+    
+    // MARK: - Private Methods
+    private func updateDays() {
+        days = generateDaysForMonth(currentMonth)
+    }
+    
+    private func generateDaysForMonth(_ month: Date) -> [CalendarDay] {
+        guard let monthInterval = calendar.dateInterval(of: .month, for: month),
+              let monthFirstWeek = calendar.dateInterval(of: .weekOfMonth, for: monthInterval.start)
+        else { return [] }
+        
+        var days: [CalendarDay] = []
+        var currentDate = monthFirstWeek.start
+        
+        // Generate 6 weeks (42 days) to ensure consistent grid
+        for _ in 0..<42 {
+            let isInCurrentMonth = calendar.isDate(currentDate, equalTo: month, toGranularity: .month)
+            let isToday = calendar.isDate(currentDate, inSameDayAs: today)
+            let isSelected = selectedDate.map { calendar.isDate(currentDate, inSameDayAs: $0) } ?? false
+            let dayEvents = eventsForDate(currentDate)
+            
+            days.append(CalendarDay(
+                date: currentDate,
+                isCurrentMonth: isInCurrentMonth,
+                isToday: isToday,
+                isSelected: isSelected,
+                events: dayEvents
+            ))
+            
+            currentDate = calendar.date(byAdding: .day, value: 1, to: currentDate)!
+        }
+        
+        return days
+    }
 }
 ```
 
