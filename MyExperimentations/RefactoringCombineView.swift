@@ -8,7 +8,7 @@
 import SwiftUI
 import Combine
 
-
+/// TIMER
 final class RefactoringCombineViewModel: ObservableObject {
     @Published var seconds: Int = 0
     @Published var state: CurrentState = .idle
@@ -46,7 +46,6 @@ final class RefactoringCombineViewModel: ObservableObject {
     func resetTimer()  {
         stopTimer()
         seconds = 0
-        startTimer()
     }
 }
 

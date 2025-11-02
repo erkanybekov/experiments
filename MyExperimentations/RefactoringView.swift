@@ -8,7 +8,7 @@
 import SwiftUI
 import Combine
 
-
+/// LOGIN
 final class RefactoringViewModel: ObservableObject {
     @Published var username = ""
     @Published var email = ""
