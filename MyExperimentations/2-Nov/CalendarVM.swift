@@ -48,7 +48,7 @@ final class CalendarVM {
         
         // generate six weeks (42 days)
         for _ in 0..<42 {
-            let isCurrentMonth = calendar.isDate(currentDate, equalTo: month, toGranularity: .month)
+            _ = calendar.isDate(currentDate, equalTo: month, toGranularity: .month)
             let isToday = calendar.isDate(currentDate, inSameDayAs: todayDate)
             let isSelected  = selectedDate.map { calendar.isDate(currentDate, inSameDayAs: $0 )} ?? false
             let dayEvents = eventForDate(date: currentDate)
